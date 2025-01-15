@@ -1,0 +1,35 @@
+---
+- name: Configure NFS server on hosts in the "nfs" group
+  hosts: nfs
+  become: yes
+  tasks:
+    - name: Update package index
+      apt:
+        update_cache: yes
+
+    - name: Install NFS kernel server
+      apt:
+        name: nfs-kernel-server
+        state: present
+
+    - name: Create NFS shared directory
+      file:
+        path: /srv/nfs
+        state: directory
+        owner: nobody
+        group: nogroup
+        mode: '0777'
+
+    - name: Add NFS export entry to /etc/exports
+      lineinfile:
+        path: /etc/exports
+        line: "/srv/nfs *(rw,sync,no_subtree_check,no_root_squash)"
+        state: present
+
+    - name: Apply NFS export configuration
+      command: exportfs -a
+
+    - name: Restart NFS kernel server
+      service:
+        name: nfs-kernel-server
+        state: restarted
